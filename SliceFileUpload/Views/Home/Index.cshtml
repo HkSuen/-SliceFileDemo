@@ -1,0 +1,110 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<div class="text-center">
+    <h1 class="display-4">Slice File Upload Demo</h1>
+    <input type="file" id="fileUpload" name="SeclectFiles">
+    <button type="button" class="btn btn-primary" data-loading-text="Loading..." id="upload">上传文件</button>
+    <h1 id="show">0%</h1>
+</div>
+<script type="text/javascript">
+    window.onload = function () {
+        (function ($) {
+            // set btn loading text
+            var Show = function (text) {
+                $("#show").text(text + "%");
+            }
+            // 上传
+            var btnClick = function () {
+                getFile();
+            };
+            // 获取文件
+            var getFile = function () {
+                var files = $("#fileUpload").prop("files");//获取文件列表
+                if (!files || files.length <= 0) {
+                    throw "文件不存在！"
+                }
+                fileReader(files, Slice);
+            }
+            // 文件流
+            var bufToBlob = function (buf, mimeType = "") {
+                return new Blob([buf], { type: mimeType });
+            }
+            var fileReader = function (files,callback) {
+                for (var i = 0; i < files.length; i++) {
+                    var reader = new FileReader();
+                    var file = files[i];
+                    reader.readAsArrayBuffer(files[i]);
+                    reader.onload = function (files) {
+                        var filesblob = bufToBlob(this.result, file.type);
+                        debugger
+                        if (typeof callback == 'function') {
+                            callback(filesblob, file);
+                        }
+                    };
+                }
+            }
+            // 二进制大刀
+            var blobSlice = function (blob, start, end, type) {
+                type = type || blob.type;
+                if (blob.slice) {
+                    return blob.slice(start, end,type);
+                } else if (blob.mozSlice) { // 兼容firefox
+                    return blob.mozSlice(start, end,type);
+                } else if (blob.webkitSlice) { // 兼容webkit
+                    return blob.webkitSlice(start, end, type);
+                } else {
+                    throw "slice error!!!"
+                }
+            }
+            // 二进制切片
+            var Slice = function (blob, file) {
+                var fileData = {
+                    fileKey: new Date().getTime(), 
+                    sliceSize: 1024 * 500,//500KB
+                    size: file.size,
+                    fileName: file.name,
+                    fileType: file.type,
+                    chunkIndex: 0,
+                    chunk: null
+                }
+                var startByte = 0, endByte = 0;
+                var Cutting = function (sendSlice) {
+                    if (startByte < fileData.size) {
+                        // >chunk
+                        var bSlice = function () {
+                            fileData.chunkIndex++;
+                            fileData.chunk = blobSlice(blob, startByte, endByte);
+                            if (typeof sendSlice == "function") {
+                                sendSlice(fileData);
+                            }
+                            startByte = endByte;
+                            if (endByte < fileData.size) {
+                                Cutting(sendSlice);
+                            }
+                        }
+                        if ((startByte + fileData.sliceSize) <= fileData.size) {
+                            endByte = startByte + fileData.sliceSize;
+                            bSlice();
+                        }
+                        // <chunk
+                        if (startByte < fileData.size) {
+                            endByte = fileData.size;
+                            bSlice();
+                        }
+                    }
+                }
+                Cutting(SendBlob); //每片上传服务器
+            };
+            // 发送切片数据
+            var SendBlob = async function (chunk) {
+                console.log(chunk.chunkIndex);
+                console.log(chunk.chunk);
+            }
+            $("#upload").on("click", btnClick);
+            if (!(window.File || window.FileReader || window.FileList || window.Blob)) {
+                throw "用Chrome浏览器!!";
+            }
+        })(jQuery);
+    }
+</script>
