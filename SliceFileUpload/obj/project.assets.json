@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\SUENWORK\\SUEN\\SliceFileDemo\\SliceFileUpload\\SliceFileUpload.csproj",
+      "projectUniqueName": "E:\\SUENWORK\\SUEN\\-SliceFileDemo\\SliceFileUpload\\SliceFileUpload.csproj",
       "projectName": "SliceFileUpload",
-      "projectPath": "E:\\SUENWORK\\SUEN\\SliceFileDemo\\SliceFileUpload\\SliceFileUpload.csproj",
+      "projectPath": "E:\\SUENWORK\\SUEN\\-SliceFileDemo\\SliceFileUpload\\SliceFileUpload.csproj",
       "packagesPath": "C:\\Users\\创智信息\\.nuget\\packages\\",
-      "outputPath": "E:\\SUENWORK\\SUEN\\SliceFileDemo\\SliceFileUpload\\obj\\",
+      "outputPath": "E:\\SUENWORK\\SUEN\\-SliceFileDemo\\SliceFileUpload\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

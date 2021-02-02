@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using SliceFileUpload.Common;
 using SliceFileUpload.Models;
 
 using System;
@@ -44,14 +46,66 @@ namespace SliceFileUpload.Controllers
      */
     public class UploadController : ControllerBase
     {
-        public UploadController(IOptions<ConfigSettingModel> configSettings, ILogger<UploadController> logger) : base(configSettings, logger)
-        { }
+        private static IHostingEnvironment _hostingEvironment;
+        public UploadController(IHostingEnvironment hostingEnvironment, IOptions<ConfigSettingModel> configSettings, ILogger<UploadController> logger) : base(configSettings, logger)
+        {
+            _hostingEvironment = hostingEnvironment;
+        }
 
         /*
          * 单文件接口
          */
-        public async Task<IActionResult> File(IFormFile file) {
-            return Ok();
+        public async Task<IActionResult> File(IFormCollection Form)
+        {
+            bool End = false;
+            try
+            {
+                var webRootPath = _hostingEvironment.WebRootPath;
+                Dictionary<string, object> paramDatas = _GetFormData;
+                string fileKey = paramDatas["fileKey"]?.ToString(),
+                    fileName = paramDatas["fileName"].ToString();
+                string fileUrl = $"/UploadFiles/{fileKey}/";
+                int size = Convert.ToInt32(paramDatas["size"].ToString()),
+                    chunkCount = Convert.ToInt32(paramDatas["chunkCount"].ToString()),
+                    chunkIndex = Convert.ToInt32(paramDatas["chunkIndex"].ToString());
+                var Files = _GetFiles;
+                if (Files != null && Files.Count() > 0)
+                {
+                    foreach (var file in Files)
+                    {
+                        var filePath = Path.GetTempFileName();
+                        Stream fileStream = file.OpenReadStream();
+                        if (!Directory.Exists(webRootPath + fileUrl))
+                        {
+                            Directory.CreateDirectory(webRootPath + fileUrl);
+                        }
+                        FilesComm.ChunkUpload(fileStream, (webRootPath + fileUrl + fileKey + chunkIndex));
+                    }
+                    if (chunkIndex == chunkCount)
+                    {
+                        var fileCount = FilesComm.GetChunkCount(webRootPath + fileUrl);
+                        while (chunkCount >= fileCount)
+                        {
+                            if(chunkCount == FilesComm.GetChunkCount(webRootPath + fileUrl))
+                            {
+                                List<string> FileChunkNames = new List<string>();
+                                for (int i = 1; i <= chunkCount; i++)
+                                {
+                                    FileChunkNames.Add((webRootPath + fileUrl + fileKey + i));
+                                }
+                                End = await FilesComm.MergeFiles(FileChunkNames.ToArray(), webRootPath + fileUrl + fileName);
+                                break;
+                            }
+                            fileCount = FilesComm.GetChunkCount(webRootPath + fileUrl);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { status = false, Msg = ex.Message });
+            }
+            return Ok(new { status = true, end = End });
         }
 
         /*
