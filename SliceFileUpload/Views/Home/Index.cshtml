@@ -86,7 +86,7 @@
             var Slice = function (blob, file) {
                 var fileData = {
                     fileKey: new Date().getTime(), //文件标识，最好guid代替
-                    sliceSize: 1024 * 500,//500K
+                    sliceSize: 1024 * 1024,//500K
                     size: file.size,
                     fileName: file.name,
                     fileType: file.type,
@@ -133,10 +133,10 @@
                         formData.append(param, chunk[param]);
                     }
                 }
-                Post('/Upload/File', formData);
+                Post('/Upload/File', formData, { data });
                 
             }
-            var Post = function (url, formData) {
+            var Post = function (url, formData, { data }) {
                 $.ajax({
                     url: url,
                     type: 'post',
@@ -145,15 +145,16 @@
                     //async: false,
                     data: formData,
                     dataType: 'json',
-                    success: function (data) {
+                    success: function (res) {
                         Now();
-                        if (!data.status) {
+                        if (!res.status) {
                             alert("上传文件错误；注意Console！");
                         }
-                        if (data.end) {
+                        if (res.end) {
                             Now();
                             alert("上传完成！！");
                         }
+                        $("#jindu").text((parseFloat(res.chunkIndex / res.chunkCount)) * 100 + "%");
                     },
                     error: function (jqXHR, status, errorThrown) {
                         throw (status + '----' + errorThrown);

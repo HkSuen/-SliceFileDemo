@@ -58,6 +58,7 @@ namespace SliceFileUpload.Controllers
         public async Task<IActionResult> File(IFormCollection Form)
         {
             bool End = false;
+            int chunkCount = 0, chunkIndex = 0;
             try
             {
                 var webRootPath = _hostingEvironment.WebRootPath;
@@ -65,9 +66,9 @@ namespace SliceFileUpload.Controllers
                 string fileKey = paramDatas["fileKey"]?.ToString(),
                     fileName = paramDatas["fileName"].ToString();
                 string fileUrl = $"/UploadFiles/{fileKey}/";
-                int size = Convert.ToInt32(paramDatas["size"].ToString()),
-                    chunkCount = Convert.ToInt32(paramDatas["chunkCount"].ToString()),
-                    chunkIndex = Convert.ToInt32(paramDatas["chunkIndex"].ToString());
+                int size = Convert.ToInt32(paramDatas["size"].ToString());
+                chunkCount = Convert.ToInt32(paramDatas["chunkCount"].ToString());
+                chunkIndex = Convert.ToInt32(paramDatas["chunkIndex"].ToString());
                 var Files = _GetFiles;
                 if (Files != null && Files.Count() > 0)
                 {
@@ -86,7 +87,7 @@ namespace SliceFileUpload.Controllers
                         var fileCount = FilesComm.GetChunkCount(webRootPath + fileUrl);
                         while (chunkCount >= fileCount)
                         {
-                            if(chunkCount == FilesComm.GetChunkCount(webRootPath + fileUrl))
+                            if (chunkCount == FilesComm.GetChunkCount(webRootPath + fileUrl))
                             {
                                 List<string> FileChunkNames = new List<string>();
                                 for (int i = 1; i <= chunkCount; i++)
@@ -105,7 +106,7 @@ namespace SliceFileUpload.Controllers
             {
                 return Ok(new { status = false, Msg = ex.Message });
             }
-            return Ok(new { status = true, end = End });
+            return Ok(new { status = true, end = End, chunkIndex, chunkCount });
         }
 
         /*
