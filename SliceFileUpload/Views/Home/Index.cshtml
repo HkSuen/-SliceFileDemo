@@ -86,7 +86,7 @@
             var Slice = function (blob, file) {
                 var fileData = {
                     fileKey: new Date().getTime(), //文件标识，最好guid代替
-                    sliceSize: 1024 * 1024,//500K
+                    sliceSize: 1024 * 1024 * 2,//2M
                     size: file.size,
                     fileName: file.name,
                     fileType: file.type,
@@ -154,7 +154,9 @@
                             Now();
                             alert("上传完成！！");
                         }
-                        $("#jindu").text((parseFloat(res.chunkIndex / res.chunkCount)) * 100 + "%");
+                        var jindunum = (res.chunkIndex / res.chunkCount).toFixed(2) * 100;
+                        debugger
+                        $("#jindu").text(jindunum + "%");
                     },
                     error: function (jqXHR, status, errorThrown) {
                         throw (status + '----' + errorThrown);

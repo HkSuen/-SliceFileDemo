@@ -17,17 +17,13 @@ namespace SliceFileUpload.Common
             var dirInfo = new System.IO.DirectoryInfo(Path);
             int totalFile = 0;
             totalFile += dirInfo.GetFiles().Length;
-            //foreach (System.IO.DirectoryInfo subdir in dirInfo.GetDirectories())
-            //{
-            //    totalFile += GetChunkCount(subdir);
-            //}
             return totalFile;
         }
 
         /// <summary>
         /// 文件分块保存
         /// </summary>
-        public static async void ChunkUpload(Stream stream,string path)
+        public static async Task<bool> ChunkUpload(Stream stream,string path)
         {
             try
             {
@@ -44,6 +40,7 @@ namespace SliceFileUpload.Common
                         fs.Close();
                     }
                 }
+                return true;
             }
             catch (Exception ex)
             {
@@ -82,5 +79,17 @@ namespace SliceFileUpload.Common
             }
             return true;
         }
+
+        /// <summary>
+        /// 检查文件夹是否存在
+        /// </summary>
+        public static void CheckFolder(string fileUrl)
+        {
+            if (!Directory.Exists(fileUrl))
+            {
+                Directory.CreateDirectory(fileUrl);
+            }
+        }
+
     }
 }

@@ -53,7 +53,8 @@ namespace SliceFileUpload.Controllers
         }
 
         /*
-         * 单文件接口
+         * 文件接口
+         * 方式1：分片保存后组合文件(异步)
          */
         public async Task<IActionResult> File(IFormCollection Form)
         {
@@ -66,38 +67,44 @@ namespace SliceFileUpload.Controllers
                 string fileKey = paramDatas["fileKey"]?.ToString(),
                     fileName = paramDatas["fileName"].ToString();
                 string fileUrl = $"/UploadFiles/{fileKey}/";
+                string Path = webRootPath + fileUrl;
                 int size = Convert.ToInt32(paramDatas["size"].ToString());
                 chunkCount = Convert.ToInt32(paramDatas["chunkCount"].ToString());
                 chunkIndex = Convert.ToInt32(paramDatas["chunkIndex"].ToString());
+                bool IsEnd = chunkIndex == chunkCount;
                 var Files = _GetFiles;
                 if (Files != null && Files.Count() > 0)
                 {
                     foreach (var file in Files)
                     {
-                        var filePath = Path.GetTempFileName();
                         Stream fileStream = file.OpenReadStream();
-                        if (!Directory.Exists(webRootPath + fileUrl))
+                        FilesComm.CheckFolder(Path);
+                        if (!IsEnd)
                         {
-                            Directory.CreateDirectory(webRootPath + fileUrl);
+                            FilesComm.ChunkUpload(fileStream, (Path + fileKey + chunkIndex));
                         }
-                        FilesComm.ChunkUpload(fileStream, (webRootPath + fileUrl + fileKey + chunkIndex));
+                        else
+                        {
+                            // 最后一片保证是同步保存！ 以防导致文件格式错误！
+                            await FilesComm.ChunkUpload(fileStream, (Path + fileKey + chunkIndex));
+                        }
                     }
-                    if (chunkIndex == chunkCount)
+                    if (IsEnd)
                     {
-                        var fileCount = FilesComm.GetChunkCount(webRootPath + fileUrl);
+                        var fileCount = FilesComm.GetChunkCount(Path);
                         while (chunkCount >= fileCount)
                         {
-                            if (chunkCount == FilesComm.GetChunkCount(webRootPath + fileUrl))
+                            if (chunkCount == FilesComm.GetChunkCount(Path))
                             {
                                 List<string> FileChunkNames = new List<string>();
                                 for (int i = 1; i <= chunkCount; i++)
                                 {
-                                    FileChunkNames.Add((webRootPath + fileUrl + fileKey + i));
+                                    FileChunkNames.Add((Path + fileKey + i));
                                 }
-                                End = await FilesComm.MergeFiles(FileChunkNames.ToArray(), webRootPath + fileUrl + fileName);
+                                End = await FilesComm.MergeFiles(FileChunkNames.ToArray(), Path + fileName);
                                 break;
                             }
-                            fileCount = FilesComm.GetChunkCount(webRootPath + fileUrl);
+                            fileCount = FilesComm.GetChunkCount(Path);
                         }
                     }
                 }
@@ -110,7 +117,8 @@ namespace SliceFileUpload.Controllers
         }
 
         /*
-         * 多文件接口
+         * 文件接口
+         * 方式2：把所有的分片依次加入到同一文件中（需要同步保持...）
          */
         public async Task<IActionResult> Files(List<IFormFile> files)
         {
