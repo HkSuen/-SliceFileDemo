@@ -6,3 +6,5 @@ slice file upload in .net5 (developing)
 后续预计：
   1.分片保存后续处理方式（如何删除等）
   2.文件类型过滤、单块文件大小过滤等
+
+#这是开发版本，结构并不完善，请移步FilesManager
